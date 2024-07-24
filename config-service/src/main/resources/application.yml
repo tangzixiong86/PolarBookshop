@@ -1,0 +1,26 @@
+server:
+  port: 8888
+  tomcat:
+    connection-timeout: 2s
+    keep-alive-timeout: 15s
+    threads:
+      max: 50
+      min-spare: 5
+
+spring:
+  application:
+    name: config-service
+  cloud:
+    config:
+      server:
+        git:
+          uri: https://github.com/tangzixiong86/config-repo.git
+          default-label: main
+          #与远程存储库建立连接的时间限制
+          timeout: 5
+          #在启动时在本地克隆远程存储库
+          clone-on-start: true
+          #强制拉取远程存储库并丢弃任何本地更改
+          force-pull: true
+
+

@@ -12,7 +12,8 @@ jobs:
       fail-fast: false
       matrix:
         project: [
-          catalog-service
+          catalog-service,
+          config-service
         ]
     steps:
       - name: Checkout source code
