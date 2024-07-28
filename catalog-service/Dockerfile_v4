@@ -1,0 +1,30 @@
+# 第一阶段：构建阶段
+FROM alpine:latest AS builder
+# 安装 OpenJDK 21
+RUN apk update && apk add openjdk21
+# 设置工作目录
+WORKDIR /src
+# 复制源代码
+COPY . .
+# 构建应用
+RUN ./gradlew clean bootJar
+# 提取分层 JAR 文件
+RUN java -Djarmode=tools -jar build/libs/catalog-service-0.0.1-SNAPSHOT.jar extract --launcher --layers --destination libs
+
+# 第二阶段：生产阶段
+FROM alpine:latest
+# 安装 OpenJDK 21 JRE
+RUN apk add --update openjdk21-jre
+# 创建用户
+RUN adduser -D -S spring
+# 切换用户
+USER spring
+# 设置工作目录
+WORKDIR /app
+# 复制构建阶段的输出
+COPY --from=builder /src/libs/dependencies/ ./
+COPY --from=builder /src/libs/spring-boot-loader/ ./
+COPY --from=builder /src/libs/snapshot-dependencies/ ./
+COPY --from=builder /src/libs/application/ ./
+# 设置容器启动命令
+ENTRYPOINT ["java", "org.springframework.boot.loader.launch.JarLauncher"]
