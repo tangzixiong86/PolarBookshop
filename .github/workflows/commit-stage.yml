@@ -49,7 +49,7 @@ jobs:
           kubeval: 0.16.1
           # Different schema required because of https://github.com/instrumenta/kubeval/issues/301
           command: |
-            kubeval --strict -d k8s
+            kubeval --strict -d ${{ matrix.project }}/k8s
   package:
     name: Package and Publish ${{ matrix.project }}
     env:
