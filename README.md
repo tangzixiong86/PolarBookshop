@@ -159,4 +159,7 @@ tilt down
 |minikube stop --profile polar    |停止polar集群                        |
 |minikube start --profile polar   |启动polar集群                        |
 |minikube delete --profile polar  |删除polar集群                        |
+|kubeval --strict yml文件          |验证Kubernetes YAML文件的有效性和符合性|
+|docker-compose -p <项目名称> up -d|创建和启动服务所声明的容器，d 标志代表 "detached mode"（后台模式）。这意味着服务将在后台运行，不会阻塞终端窗口。|
+
 
