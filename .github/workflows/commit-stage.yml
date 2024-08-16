@@ -14,7 +14,8 @@ jobs:
         project: [
           catalog-service,
           config-service,
-          order-service
+          order-service,
+          edge-service
         ]
     steps:
       - name: Checkout source code

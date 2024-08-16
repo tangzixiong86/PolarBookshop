@@ -141,6 +141,11 @@ tilt up
 ```bash
 tilt down
 ```
+## 在集群里启用ingress附加组件 
+```bash
+minikube addons enable ingress --images="KubeWebhookCertgenCreate=google_containers/kube-webhook-certgen:v1.4.1,KubeWebhookCertgenPatch=google_containers/kube-webhook-certgen:v1.4.1,IngressController=google_containers/nginx-ingress-controller:v1.10.1" --registries="IngressController=registry.cn-hangzhou.aliyuncs.com,KubeWebhookCertgenCreate=registry.cn-hangzhou.aliyuncs.com,KubeWebhookCertgenPatch=registry.cn-hangzhou.aliyuncs.com" --profile polar
+```
+> **Warning:** 因国内网络限制，需使用国内镜像源
 
 ## 命令参考
 |    命令                         |               说明                  |
@@ -159,7 +164,10 @@ tilt down
 |minikube stop --profile polar    |停止polar集群                        |
 |minikube start --profile polar   |启动polar集群                        |
 |minikube delete --profile polar  |删除polar集群                        |
-|kubeval --strict yml文件          |验证Kubernetes YAML文件的有效性和符合性|
+|minikube addons enable ingress --profile polar  |在集群里启用ingress附加组件                        |
+|minikube ip --profile polar      |在Linux系统中获取分配给 minikube 集群的 IP 地址                        |
+|minikube ip --profile polar      |在Linux系统中获取分配给 minikube 集群的 IP 地址                        |
+|minikube tunnel --profile polar  |在 macOS 和 Windows 上，当在 Docker 上运行时，入口附加组件尚不支持使用 minikube 集群的 IP 地址。相反，我们需要使用以下命令将集群暴露到本地环境，然后使用 127.0.0.1 IP 地址来调用集群|
 |docker-compose -p <项目名称> up -d|创建和启动服务所声明的容器，d 标志代表 "detached mode"（后台模式）。这意味着服务将在后台运行，不会阻塞终端窗口。|
 
 

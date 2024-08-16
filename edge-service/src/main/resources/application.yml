@@ -1,0 +1,109 @@
+server:
+  port: 9004
+  netty:
+    connection-timeout: 2s
+    idle-timeout: 15s
+  shutdown: graceful
+
+spring:
+  application:
+    name: edge-service
+  lifecycle:
+    timeout-per-shutdown-phase: 15s
+  config:
+    import: "optional:configserver:"
+  cloud:
+    config:
+      uri: http://localhost:8888
+      request-connect-timeout: 5000 # 5s
+      request-read-timeout: 5000 # 5s
+      fail-fast: false # In production, set to true
+      retry:
+        max-attempts: 6
+        initial-interval: 1000 # 1s
+        max-interval: 2000 # 2s
+        multiplier: 1.1
+    gateway:
+      httpclient:
+        connect-timeout: 2000 # 2s
+        response-timeout: 5s
+        pool:
+          type: elastic
+          max-idle-time: 15s
+          max-life-time: 60s
+      default-filters:
+        - SaveSession
+        - name: RequestRateLimiter
+          args:
+            redis-rate-limiter:
+              #这是令牌桶算法中的一个关键参数，表示每单位时间（默认是秒）令牌桶中令牌的补充速率。在这个例子中，每秒向令牌桶中添加10个令牌。
+              replenishRate: 10
+              #允许最多 20 个请求的突发
+              burstCapacity: 20
+              #这是每次请求消耗的令牌数量。在这个例子中，每次请求消耗1个令牌。
+              requestedTokens: 1
+        - name: Retry
+          args:
+            retries: 3
+            methods: GET
+            series: SERVER_ERROR
+            exceptions: java.io.IOException, java.util.concurrent.TimeoutException
+            backoff:
+              firstBackoff: 50ms
+              maxBackOff: 500ms
+              factor: 2
+              basedOnPreviousValue: false
+      routes:
+        - id: catalog-route
+          uri: ${CATALOG_SERVICE_URL:http://localhost:9003}/books
+          predicates:
+            - Path=/books/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: catalogCircuitBreaker
+                fallbackUri: forward:/catalog-fallback
+        - id: order-route
+          uri: ${ORDER_SERVICE_URL:http://localhost:9005}/orders
+          predicates:
+            - Path=/orders/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: orderCircuitBreaker
+  data:
+    redis:
+      connect-timeout: 2s
+      host: localhost
+      port: 6379
+      timeout: 1s
+  session:
+    #会话定义超时。如果您未指定超时，默认值为 30 分钟。
+    timeout: 10m
+    redis:
+      namespace: polar:edge
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        #定义了滑动窗口的大小。在这个例子中，设置为20，意味着断路器将基于最近20次的请求来判断失败率是否超过了阈值。
+        #这是为了动态地评估服务的健康状况。
+        slidingWindowSize: 20
+        #当断路器处于半开状态时，这个参数定义了允许通过断路器的请求数量。
+        permittedNumberOfCallsInHalfOpenState: 5
+        #这个参数表示触发断路器从闭合状态切换到打开状态的失败率阈值。在这个配置中，如果最近20次请求中的失败率达到或超过50%，断路器将打开。
+        failureRateThreshold: 50
+        #路器在打开状态下的等待时间。在这段时间之后，断路器将自动切换到半开状态，开始允许有限的请求通过。这里的设置是15秒（15000毫秒）。
+        waitDurationInOpenState: 15000
+  #限时器用于限制一个操作的执行时间，如果操作超时，将抛出一个超时异常。这有助于防止长时间运行的操作阻塞线程或资源。
+  timelimiter:
+    configs:
+      default:
+        #设置操作的超时时间。在这个配置中，任何被限定了时间的操作如果超过5秒没有完成，将被视为超时。
+        #优先于我们在上一节中为 Netty HTTP 客户端（spring.cloud.gateway.httpclient.responsetimeout）定义的响应超时。
+        timeoutDuration: 5s
+
+#logging:
+#  level:
+#    io.github.resilience4j: DEBUG
